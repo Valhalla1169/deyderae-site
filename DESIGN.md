@@ -18,12 +18,36 @@ It covers every property under `deyderae.dev` — the apex site and every subdom
 | `eclipse.deyderae.dev` | `eclipse-site` (github.com/Valhalla1169/eclipse-site) | Live character-sheet hosting for a custom TTRPG: players use their own sheet, a DM can view any player's sheet | Placeholder ("coming soon"); backend planned on **Supabase** |
 
 Both are currently:
-- Static HTML/CSS/JS, no build step, no framework, no package.json.
-- Deployed to **Cloudflare Workers** (static assets mode, via `wrangler.jsonc`), one Worker per repo.
-- Styled with a hand-rolled **Catppuccin** 4-theme system (Latte/Frappé/Macchiato/Mocha) switched client-side via `data-theme` + `localStorage`, with an identical `script.js` copy-pasted into both repos.
-- Pushed directly to `main` with no CI, no PR review step, no tests, no lint, and no security headers configured.
+- Static HTML/CSS/JS, no build step, no framework. (`deyderae-site` has a `package.json` only to pin Wrangler as a dev dependency; there are no runtime dependencies. See §5.4.)
+- Deployed to **Cloudflare Workers** (static assets mode, via `wrangler.jsonc`), one Worker per repo. Only each repo's `public/` directory is published (§3.5).
+- Styled with a hand-rolled **Catppuccin** 4-theme system (Latte/Frappé/Macchiato/Mocha) switched client-side via `data-theme` + `localStorage`, with the palette CSS and theme-switcher logic copy-pasted between the repos (§3.4). The apex site's `style.css` and `script.js` have since gained site-specific layout and footer-year code, so the files are no longer byte-identical.
+- Pushed directly to `main` and deployed manually with `wrangler deploy` (`npm run deploy`), with no CI, no PR review step, no tests, no lint, and no security headers configured.
 
 None of that is wrong for where the project is today — a static personal site doesn't need a build pipeline. It's called out here because several of these gaps become real risks the moment a subdomain (starting with Eclipse) grows into an actual application with user data. This document sets the bar to grow into, not a demand to rebuild what already works.
+
+### 2.1 Standards check: apex site (2026-09-19)
+
+Checked directly against the live site, the repo, and DNS. It is a dated snapshot, so re-verify rather than trusting it once anything changes.
+
+| Standard | Status |
+|---|---|
+| §3.5 Only `public/` is published | Pass. Verified by `wrangler deploy --dry-run` (4 files) and live 404s for `/DESIGN.md`, `/wrangler.jsonc`, `/.git/config` |
+| §4 Landmarks, heading order, focus states, `aria-pressed`/`aria-label`, reduced motion | Pass |
+| §4 Contrast in all four themes (AA) | Pass. Computed from the palette values: lowest small-text ratio 4.7:1 (Latte footer text), large text at least 4.1:1 |
+| §4 Legible without JavaScript | Pass (the theme buttons are inert without JS) |
+| §4 No inline scripts or handlers | Pass. The page was also tested under a strict CSP with zero violations (§5.1) |
+| §4 SEO: `<title>`, meta description | Pass |
+| §4 SEO: Open Graph/Twitter tags, canonical URL, `sitemap.xml` | Missing |
+| §4 `robots.txt` | Served, but it is Cloudflare's managed content-signals file, not a file in the repo |
+| §5.1 Security headers (CSP, HSTS, nosniff, Referrer-Policy, Permissions-Policy, frame-ancestors) | Missing on the live site. A CSP is now unblocked |
+| §5.2 DNSSEC | Pass (DS and DNSKEY published, resolver-validated) |
+| §5.2 CAA records | Missing |
+| §5.2 Registrar lock | Not verifiable from outside. Confirm at the registrar |
+| §5.3 No secrets committed, `.gitignore` present | Pass (nothing sensitive tracked or in history) |
+| §5.4 Dependency hygiene | `npm audit` reports 0 vulnerabilities. Dependabot and a CI audit step are not set up |
+| §6.1 PRs, protected `main`, Conventional Commits | Not in use (direct pushes; commit messages are not Conventional Commits style) |
+| §6.2 README and LICENSE | README is a title only, and there is no LICENSE. `package.json` says `"license": "ISC"`, which is npm's default rather than a deliberate choice (§8.1) |
+| §6.3-§6.4 CI/CD, previews, link check, HTML validation, Lighthouse, axe | None yet. Deploys are manual |
 
 ## 3. Architecture
 
@@ -75,25 +99,35 @@ What that implies concretely:
 
 ### 3.4 Shared design system — stop duplicating it
 
-The Catppuccin theme CSS and the theme-switcher `script.js` are currently byte-for-byte duplicated across both repos. That's the first thing to fix, independent of everything else in this document, because every future subdomain will otherwise copy-paste it again and they *will* drift out of sync (a palette tweak in one site silently not applied to another).
+The Catppuccin palette CSS and the theme-switcher logic in `script.js` are currently copy-pasted across both repos. That's the first thing to fix, independent of everything else in this document, because every future subdomain will otherwise copy-paste it again and they *will* drift out of sync (a palette tweak in one site silently not applied to another).
 
 Recommended fix: extract the shared pieces (CSS custom-property theme definitions, the theme-switcher script, the base reset/typography, the favicon) into one versioned source of truth, and pull it into each repo rather than hand-copying. In order of effort:
 
 1. **Cheapest now:** a small internal npm package (or even just a `git subtree`/submodule) published from a new `deyderae-design` repo, consumed by each site's build.
 2. **No-build-step-friendly alternative:** since these sites currently have no bundler, a single shared static asset (e.g., `theme.css` + `theme.js`) hosted at a stable URL (e.g., served from the apex domain or a tiny dedicated Worker) and `<link>`/`<script src>`-ed from every subdomain. Simple, but couples every subdomain's page load to that asset's availability — acceptable for a personal site, worth knowing about.
-3**When a framework and build step exist:** promote it to a proper shared component library.
+3. **When a framework and build step exist:** promote it to a proper shared component library.
 
 Either way: one canonical place for the four palettes and the switching logic, every site references it, nobody hand-edits a copy again.
+
+To keep that extraction mechanical, `deyderae-site/public/style.css` is split at a `Site layout` comment: everything above it is the shared theme (the four palettes), everything below is apex-specific (header and footer bands, hero, cards). Likewise `script.js` keeps the theme logic separate from the footer-year snippet. Until the shared source exists, don't edit the palette block or the theme logic in one repo only. Header, footer, and card styles should move into the shared piece only if a second site actually adopts them. The logo/favicon mark (`public/logo.svg`) is the other shared candidate.
+
+### 3.5 What gets published: the `public/` directory
+
+Each repo serves a dedicated `public/` directory, not the repo root. `wrangler.jsonc` sets `assets.directory` to `./public`, and only site content (HTML, CSS, JS, images, and the `_headers`/`_redirects` files) lives there. Config, docs, `package.json`, and tooling stay at the repo root.
+
+- **Why a directory and not an ignore file.** Wrangler's asset upload walks the whole assets directory and skips only `.assetsignore`, `_redirects`, and `_headers`. It does *not* skip `.git` or `node_modules`. With `"directory": "./"`, `wrangler deploy` fails as soon as dependencies are installed (`node_modules` contains a ~90 MiB `workerd` binary, over the 25 MiB asset limit), and without them it would publish `.git`, `DESIGN.md`, `CLAUDE.md`, and `wrangler.jsonc` as public URLs. A root `.assetsignore` is a denylist that has to be updated for every new non-site file, whereas a dedicated folder cannot leak anything that isn't inside it.
+- **Verify on every new subdomain.** `wrangler deploy --dry-run` should report `Read N files from the assets directory ...\public`, where N is exactly the number of site files. After a deploy, `/DESIGN.md`, `/wrangler.jsonc`, and `/.git/config` on the live site should return 404.
+- **Never** point `assets.directory` back at the repo root, and never put non-site files in `public/`.
 
 ## 4. Frontend standards
 
 These apply to every subdomain, static or app-like:
 
-- **Accessibility — target WCAG 2.1 AA.** Semantic landmarks (`header`, `main`, `nav`, `footer`), correct heading order, visible focus states, sufficient color contrast in *every* theme (verify Latte's light palette against WCAG contrast ratios specifically — light themes are the easiest to accidentally fail), `aria-pressed`/`aria-label` on interactive controls (already used correctly on the theme buttons — keep that habit), and respect for `prefers-reduced-motion` and `prefers-color-scheme` (already partially done via the light/dark theme default — keep it).
+- **Accessibility — target WCAG 2.1 AA.** Semantic landmarks (`header`, `main`, `nav`, `footer`), correct heading order, visible focus states, sufficient color contrast in *every* theme (verify Latte's light palette against WCAG contrast ratios specifically — light themes are the easiest to accidentally fail), `aria-pressed`/`aria-label` on interactive controls (already used correctly on the theme buttons — keep that habit), and respect for `prefers-reduced-motion` and `prefers-color-scheme` (already partially done via the light/dark theme default — keep it). In practice, on Latte the `--subtext0` and `--overlay0` to `--overlay2` tokens, raw `--blue` as link text, and raw `--peach`/`--green` as text all fall below 4.5:1 on their usual backgrounds. Use `--text`/`--subtext1` for small text, and mix accent hues toward `--text` (for example `color-mix(in srgb, var(--blue) 75%, var(--text))`) when a coloured link or badge is needed. Large text (24px, or 18.66px bold) only needs 3:1. Check every theme, not just Mocha.
 - **Progressive baseline.** A page should render its core content and be legible without JavaScript; JS enhances (theme switching, interactivity) rather than being required to see anything at all, wherever that's practical.
-- **Performance budget.** Static pages: no framework, minimal payload, no render-blocking third-party scripts. App-like pages: track bundle size deliberately once a framework is introduced; a personal project has no excuse for a bloated bundle. Lighthouse performance/accessibility/best-practices/SEO scores are a useful cheap check — see §7.4.
+- **Performance budget.** Static pages: no framework, minimal payload, no render-blocking third-party scripts. App-like pages: track bundle size deliberately once a framework is introduced; a personal project has no excuse for a bloated bundle. A tiny first-party script that must run before first paint (theme selection) may load synchronously from `<head>` so the stored theme applies without a flash of the wrong palette; everything else should defer. Lighthouse performance/accessibility/best-practices/SEO scores are a useful cheap check — see §6.4.
 - **SEO basics** on every public page: a real `<title>` and `<meta description>` (already present), Open Graph / Twitter Card tags for link previews, a `sitemap.xml` and `robots.txt`, and a canonical URL.
-- **No inline event handlers or inline `<script>` blocks going forward** (the apex page currently has one inline `<script>` for the copyright year) — move logic into the external JS file. This isn't just style: it's what makes a strict Content-Security-Policy possible (§6.2).
+- **No inline event handlers or inline `<script>` blocks going forward** (the apex page's copyright-year script now lives in `script.js`; confirm `eclipse-site` is clean too) — move logic into the external JS file. This isn't just style: it's what makes a strict Content-Security-Policy possible (§6.2).
 
 ## 5. Security
 
@@ -102,20 +136,22 @@ Security gets real emphasis here because a personal domain is still a public att
 ### 5.1 Transport and headers
 - HTTPS is already enforced by Cloudflare — keep "Always Use HTTPS" / HSTS on at the zone level, and add `Strict-Transport-Security` at the application layer too (defense in depth).
 - Add security headers to every deployed site (via a `_headers` file for Workers static assets, or Worker middleware): `Content-Security-Policy`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy` (deny what isn't used — camera, mic, geolocation, etc.), and `X-Frame-Options: DENY` (or `frame-ancestors 'none'` in CSP). None of this exists today; it's a same-day fix once §4's "no inline scripts" rule is in place, since that's what unblocks a CSP without `unsafe-inline`.
+- **Apex readiness (2026-09-19):** the apex page has no inline `<script>`, no `style=` attributes, and no third-party origins. Served with `Content-Security-Policy: default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'`, it loaded, applied a theme, and logged zero violations, so a `public/_headers` file can be added now. A subdomain that adds an external origin (Supabase for Eclipse, a font host) should extend `connect-src`/`font-src`/etc. deliberately rather than loosening the policy to `unsafe-inline`.
 
 ### 5.2 Domain and DNS
 - Registrar lock enabled; DNSSEC enabled on the zone.
 - CAA records restricting which CAs may issue certs for `deyderae.dev` and its subdomains.
 - Keep DNS management (Cloudflare) and code deploy credentials (GitHub/Wrangler) separately scoped — don't reuse one token for both.
+- **Status (2026-09-19):** DNSSEC is enabled and validating (DS and DNSKEY records published). No CAA records exist yet. Registrar lock can't be checked from DNS, so confirm it at the registrar.
 
 ### 5.3 Secrets and credentials
 - No secrets, API tokens, or credentials ever committed to a repo. Use `wrangler secret` for anything a Worker needs at runtime; use GitHub Actions encrypted secrets for CI/CD credentials (e.g., the Cloudflare API token used to deploy).
-- Add a `.gitignore` to both repos (neither currently commits anything sensitive, but there's also no `.gitignore` at all right now — add one before any local env files, `node_modules`, or build output shows up).
+- Every repo keeps a `.gitignore` covering at least `node_modules/`, `.wrangler/`, `.env*` (allowing `*.example`), `.dev.vars*`, `dist/`, logs, and OS/editor files. Both repos have one now; keep it in place before any local env files or build output show up.
 - Rotate the Cloudflare API token used for deploys if it's ever pasted anywhere outside a secrets manager (a chat, a script, a README).
 - **Supabase (Eclipse only):** the `anon` key is public by design and fine to ship client-side — it is not the security boundary, RLS is (§3.3.1). The **service role key** bypasses RLS entirely and is a genuine secret: never in client code, never committed, never logged; if it's ever needed at all, it lives in `wrangler secret` behind a specific server-side route, not in the SPA bundle.
 
 ### 5.4 Dependency hygiene (once dependencies exist)
-The moment a `package.json` shows up (a build step, a framework, a shared design package): enable Dependabot (or Renovate) for automatic update PRs, and run `npm audit` (or `osv-scanner`) in CI on every PR. Pin versions; don't float on `latest`.
+The moment a `package.json` shows up (a build step, a framework, a shared design package): enable Dependabot (or Renovate) for automatic update PRs, and run `npm audit` (or `osv-scanner`) in CI on every PR. Pin versions; don't float on `latest`. **Status:** `deyderae-site` now has a `package.json` (Wrangler as a devDependency), so this section applies to it. `npm audit` reports 0 vulnerabilities (2026-09-19), but Dependabot and a CI audit step aren't set up yet, and `package.json` declares `wrangler` as `^4.135.0`. The lockfile pins the resolved version; tighten the range if you want the manifest itself pinned.
 
 ### 5.5 Application-layer security (once there's a data layer)
 For Eclipse and any future app-like subdomain:

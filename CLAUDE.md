@@ -7,9 +7,10 @@ Static HTML/CSS/JS landing page for `deyderae.dev` — no build step, no framewo
 
 ## Working in this repo
 - **Only `public/` is published.** `wrangler.jsonc` sets `assets.directory` to `./public`, so the site files (`index.html`, `style.css`, `script.js`, `logo.svg`, and any future `_headers`/images) live there and nothing else does. Wrangler does not skip `.git` or `node_modules` on its own, so never point `assets.directory` back at the repo root and never put non-site files (docs, config, tests) in `public/`.
-- No package manager, no build step, no bundler. Don't introduce one for a trivial change — see DESIGN.md §3.2 for when it's actually warranted (this site stays plain HTML/CSS/JS unless it grows real interactive views).
-- The theme system (Catppuccin, 4 palettes, `data-theme` attribute + `localStorage`) in `public/style.css`/`public/script.js` is currently duplicated in `eclipse-site`. Per DESIGN.md §3.4, that duplication is a known issue to fix, not a pattern to copy again for a new subdomain — check whether a shared source has been extracted before hand-copying these files elsewhere.
+- No build step, no bundler, no framework. `package.json` exists only to pin Wrangler (`npm run dev` / `npm run deploy`); don't add runtime dependencies or a bundler for a trivial change — see DESIGN.md §3.2 for when that's actually warranted (this site stays plain HTML/CSS/JS unless it grows real interactive views).
+- The theme system (Catppuccin, 4 palettes, `data-theme` attribute + `localStorage`) in `public/style.css`/`public/script.js` is currently duplicated in `eclipse-site`. Per DESIGN.md §3.4, that duplication is a known issue to fix, not a pattern to copy again for a new subdomain — check whether a shared source has been extracted before hand-copying these files elsewhere. In `public/style.css`, everything above the `Site layout` comment is the shared palette block; don't change it here without changing `eclipse-site` too (DESIGN.md §3.4).
 - Avoid inline `<script>`/event handlers (see DESIGN.md §4, §6.1) — it blocks a strict CSP. Put logic in `public/script.js`.
+- New colours must meet WCAG AA in all four themes, Latte especially: use `--text`/`--subtext1` for small text, not `--subtext0` or `--overlay*` (DESIGN.md §4).
 - `wrangler dev` for local preview; `wrangler deploy` for production (until CI/CD from DESIGN.md §6.3 exists — check whether that's landed before assuming manual deploy is still the process).
 - No tests or CI exist yet. If you add either, follow DESIGN.md §6.3–§6.4 rather than inventing a one-off approach.
 
