@@ -2,6 +2,6 @@
 	"name": "deyderae-site",
 	"compatibility_date": "2026-09-19",
 	"assets": {
-		"directory": "./"
+		"directory": "./public"
 	}
 }
