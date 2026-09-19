@@ -3,42 +3,63 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Eclipse — coming soon</title>
-<meta name="description" content="Character sheet hosting, coming soon." />
-<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎲</text></svg>" />
+<title>deyderae.dev</title>
+<meta name="description" content="Deyderae's personal corner of the internet — projects, tools, and games." />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌙</text></svg>" />
 <link rel="stylesheet" href="style.css" />
-<style>
-  .center-wrap {
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    padding: 24px;
-  }
-  .center-wrap .card-icon { font-size: 3rem; margin-bottom: 12px; }
-  .center-wrap h1 { margin: 0 0 10px; font-size: 2rem; }
-  .center-wrap p { color: var(--subtext1); max-width: 46ch; margin: 0 0 24px; }
-  .back-link { font-size: 0.9rem; }
-  .theme-switcher-fixed { position: fixed; top: 20px; right: 20px; }
-</style>
 </head>
 <body>
-  <div class="theme-switcher theme-switcher-fixed" role="group" aria-label="Theme switcher">
-    <button class="theme-btn" data-swatch="latte" title="Latte" aria-pressed="false"></button>
-    <button class="theme-btn" data-swatch="frappe" title="Frapp&eacute;" aria-pressed="false"></button>
-    <button class="theme-btn" data-swatch="macchiato" title="Macchiato" aria-pressed="false"></button>
-    <button class="theme-btn" data-swatch="mocha" title="Mocha" aria-pressed="true"></button>
-  </div>
+<div class="wrap">
 
-  <div class="center-wrap">
-    <div class="card-icon">🎲</div>
-    <h1>Eclipse is on its way</h1>
-    <p>Character sheet hosting for tabletop games — building it now. Check back soon.</p>
-    <a class="back-link" href="https://deyderae.dev">&larr; back to deyderae.dev</a>
-  </div>
+  <header class="site">
+    <div class="wordmark">deyderae<span>.dev</span></div>
+    <div class="theme-switcher" role="group" aria-label="Theme switcher">
+      <button class="theme-btn" data-swatch="latte" title="Latte" aria-pressed="false"></button>
+      <button class="theme-btn" data-swatch="frappe" title="Frapp&eacute;" aria-pressed="false"></button>
+      <button class="theme-btn" data-swatch="macchiato" title="Macchiato" aria-pressed="false"></button>
+      <button class="theme-btn" data-swatch="mocha" title="Mocha" aria-pressed="true"></button>
+    </div>
+  </header>
 
+  <section class="hero">
+    <h1>Hi, I'm Deyderae. <span class="accent">This is where my projects live.</span></h1>
+    <p>
+      A small home on the internet for the tools, games, and experiments I build.
+      Pick a theme above — everything here runs on
+      <a href="https://catppuccin.com" target="_blank" rel="noopener">Catppuccin</a>.
+    </p>
+  </section>
+
+  <section>
+    <h2 class="section-title">Projects</h2>
+    <div class="projects">
+
+      <a class="card" href="https://eclipse.deyderae.dev" target="_blank" rel="noopener">
+        <span class="badge soon">Coming soon</span>
+        <div class="card-icon">🎲</div>
+        <h3>Eclipse</h3>
+        <p>Character sheet hosting for my tabletop games — build, track, and share characters.</p>
+        <span class="tag">eclipse.deyderae.dev</span>
+      </a>
+
+      <div class="card disabled">
+        <span class="badge soon">Planned</span>
+        <div class="card-icon">🛠️</div>
+        <h3>More on the way</h3>
+        <p>This spot is reserved for whatever gets built next.</p>
+        <span class="tag">tbd.deyderae.dev</span>
+      </div>
+
+    </div>
+  </section>
+
+  <footer class="site">
+    <span>&copy; <span id="year"></span> deyderae.dev</span>
+    <span><a href="mailto:hello@deyderae.dev">hello@deyderae.dev</a></span>
+  </footer>
+
+</div>
+<script>document.getElementById("year").textContent = new Date().getFullYear();</script>
 <script src="script.js"></script>
 </body>
 </html>
