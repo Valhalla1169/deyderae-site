@@ -5,24 +5,31 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>deyderae.dev</title>
 <meta name="description" content="Deyderae's personal corner of the internet, projects, tools, and games." />
-<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22><circle cx=%2216%22 cy=%2216%22 r=%2212%22 fill=%22%23cba6f7%22/></svg>" />
+<link rel="icon" href="logo.svg" type="image/svg+xml" />
 <link rel="stylesheet" href="style.css" />
+<script src="script.js"></script>
 </head>
 <body>
-<div class="wrap">
+<a class="skip-link" href="#main">Skip to content</a>
 
-  <header class="site">
-    <div class="wordmark">deyderae<span>.dev</span></div>
+<header class="site-header">
+  <div class="bar">
+    <a class="brand" href="/">
+      <img class="logo" src="logo.svg" alt="" width="32" height="32" />
+      <span class="wordmark">deyderae<span>.dev</span></span>
+    </a>
     <div class="theme-switcher" role="group" aria-label="Theme switcher">
-      <button class="theme-btn" data-swatch="latte" title="Latte" aria-pressed="false"></button>
-      <button class="theme-btn" data-swatch="frappe" title="Frapp&eacute;" aria-pressed="false"></button>
-      <button class="theme-btn" data-swatch="macchiato" title="Macchiato" aria-pressed="false"></button>
-      <button class="theme-btn" data-swatch="mocha" title="Mocha" aria-pressed="true"></button>
+      <button class="theme-btn" data-swatch="latte" title="Latte" aria-label="Latte theme" aria-pressed="false"></button>
+      <button class="theme-btn" data-swatch="frappe" title="Frapp&eacute;" aria-label="Frapp&eacute; theme" aria-pressed="false"></button>
+      <button class="theme-btn" data-swatch="macchiato" title="Macchiato" aria-label="Macchiato theme" aria-pressed="false"></button>
+      <button class="theme-btn" data-swatch="mocha" title="Mocha" aria-label="Mocha theme" aria-pressed="true"></button>
     </div>
-  </header>
+  </div>
+</header>
 
+<main id="main">
   <section class="hero">
-    <h1>Hi, I'm Deyderae. <span class="accent">This is where my projects live.</span></h1>
+    <h1>Hi, I'm <strong>Deyderae</strong>. <span class="accent">This is where my projects live.</span></h1>
     <p>
       A small home on the internet for the tools, games, and experiments I build.
       Pick a theme above. Everything here runs on
@@ -30,8 +37,8 @@
     </p>
   </section>
 
-  <section>
-    <h2 class="section-title">Projects</h2>
+  <section id="projects" aria-labelledby="projects-title">
+    <h2 class="section-title" id="projects-title">Projects</h2>
     <div class="projects">
 
       <a class="card" href="https://eclipse.deyderae.dev" target="_blank" rel="noopener">
@@ -50,14 +57,29 @@
 
     </div>
   </section>
+</main>
 
-  <footer class="site">
-    <span>&copy; <span id="year"></span> deyderae.dev</span>
-    <span><a href="mailto:hello@deyderae.dev">hello@deyderae.dev</a></span>
-  </footer>
-
-</div>
-<script>document.getElementById("year").textContent = new Date().getFullYear();</script>
-<script src="script.js"></script>
+<footer class="site-footer">
+  <div class="footer-inner">
+    <ul class="socials">
+      <li>
+        <a href="https://github.com/Valhalla1169" rel="me noopener" target="_blank" aria-label="GitHub">
+          <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+        </a>
+      </li>
+      <li>
+        <a href="mailto:hello@deyderae.dev" aria-label="Email hello@deyderae.dev">
+          <svg class="stroke" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+        </a>
+      </li>
+    </ul>
+    <p>&copy; <span id="year">2026</span> deyderae.dev</p>
+    <p class="built">
+      Built with plain HTML &amp; CSS, themed with
+      <a href="https://catppuccin.com" target="_blank" rel="noopener">Catppuccin</a>.
+      <a href="https://github.com/Valhalla1169/deyderae-site" target="_blank" rel="noopener">Source</a>
+    </p>
+  </div>
+</footer>
 </body>
 </html>
