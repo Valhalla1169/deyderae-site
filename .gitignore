@@ -21,7 +21,9 @@ Thumbs.db
 .idea/
 *.swp
 
-# Env files
-.env
-.env.local
-.env.*.local
+# Env files (keep committed templates)
+.env*
+!*.example
+
+# Build output
+dist/
