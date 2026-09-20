@@ -2,7 +2,7 @@
 
 **Status:** Living document. Update it whenever an architectural decision changes; don't let it drift from reality.
 **Owner:** Caleb (Valhalla1169)
-**Last reviewed:** 2026-09-19
+**Last reviewed:** 2026-09-20
 
 ## 1. Purpose and scope
 
@@ -15,9 +15,9 @@ It covers every property under `deyderae.dev` — the apex site and every subdom
 | Property | Repo | Purpose | Status |
 |---|---|---|---|
 | `deyderae.dev` | `deyderae-site` (github.com/Valhalla1169/deyderae-site) | Landing page / hub linking to subdomain projects | Live |
-| `eclipse.deyderae.dev` | `eclipse-site` (github.com/Valhalla1169/eclipse-site) | Live character-sheet hosting for a custom TTRPG: players use their own sheet, a DM can view any player's sheet | Placeholder ("coming soon"); backend planned on **Supabase** |
+| `eclipse.deyderae.dev` | `eclipse-site` (github.com/Valhalla1169/eclipse-site) | Live character-sheet hosting for a custom TTRPG: players use their own sheet, a DM can view any player's sheet | Live, on **Supabase**: accounts, campaigns and invites, player sheets, a DM roster with live updates (§2.2) |
 
-Both are currently:
+The apex site is currently the following. Eclipse has grown past this and is described in §2.2:
 - Static HTML/CSS/JS, no build step, no framework. (`deyderae-site` has a `package.json` only to pin Wrangler as a dev dependency; there are no runtime dependencies. See §5.4.)
 - Deployed to **Cloudflare Workers** (static assets mode, via `wrangler.jsonc`), one Worker per repo. Only each repo's `public/` directory is published (§3.5).
 - Styled with a hand-rolled **Catppuccin** 4-theme system (Latte/Frappé/Macchiato/Mocha) switched client-side via `data-theme` + `localStorage`, with the palette CSS and theme-switcher logic copy-pasted between the repos (§3.4). The apex site's `style.css` and `script.js` have since gained site-specific layout and footer-year code, so the files are no longer byte-identical.
@@ -48,6 +48,25 @@ Checked directly against the live site, the repo, and DNS. It is a dated snapsho
 | §6.1 PRs, protected `main`, Conventional Commits | Not in use (direct pushes; commit messages are not Conventional Commits style) |
 | §6.2 README and LICENSE | README is a title only, and there is no LICENSE. `package.json` says `"license": "ISC"`, which is npm's default rather than a deliberate choice (§8.1) |
 | §6.3-§6.4 CI/CD, previews, link check, HTML validation, Lighthouse, axe | None yet. Deploys are manual |
+
+### 2.2 Standards check: Eclipse (2026-09-20)
+
+A dated snapshot. The design decisions are in that repo's `docs/adr/` (0001 to 0009) and its `CLAUDE.md`.
+
+| Standard | Status |
+|---|---|
+| §3.5 Only `public/` is published | Pass. `wrangler deploy --dry-run` reads 54 files, and a browser test checks that private paths answer with the app shell |
+| §4 Accessibility | An automated axe scan of every page in two themes passes (`tests/e2e/a11y.spec.js`), and a unit test checks colour contrast in all four palettes. A keyboard and screen-reader pass by hand has not been done |
+| §4 No inline scripts, styles or handlers | Pass. A unit test and the browser tests (which fail on any CSP violation) enforce it |
+| §4 SEO | Deliberately not indexed (`X-Robots-Tag: noindex`): it is a private app. No Open Graph, sitemap or canonical URL |
+| §5.1 Security headers | Pass. CSP (`self` and the project's Supabase origin only), HSTS, nosniff, frame-ancestors, `no-referrer`, Permissions-Policy |
+| §5.3 Secrets | The anon key is public by design. No service role key in the repo. The SMTP key is in `supabase/.env`, which is gitignored |
+| §5.4 Dependency hygiene | `npm audit` reports 0 vulnerabilities and every dev dependency is pinned exactly. Dependabot is not set up |
+| §5.5 Application-layer security | RLS and per-column grants on every table, size and shape constraints, and six SQL suites that test as several roles. Rate limits are Supabase Auth's own. CAPTCHA and two-factor are not built yet |
+| §6.1 PRs and protected `main` | Not in use |
+| §6.2 README and LICENSE | Real README. No LICENSE (`package.json` says UNLICENSED until a choice is made, §8.1) |
+| §6.3 CI/CD | None. Tests are run by hand and deploys are manual |
+| §6.4 Testing | Vitest unit tests, database suites (`npm run test:db`), Playwright browser tests with a fake Supabase, and an axe scan. Realtime needs a check on the live project |
 
 ## 3. Architecture
 
@@ -82,6 +101,8 @@ The general default for a subdomain needing persistence: Cloudflare **D1** (SQLi
 - **Auth**, for any subdomain that isn't Eclipse: prefer an existing provider (Cloudflare Access for anything gated to just you; a proper auth provider for anything with real user accounts) over hand-rolled session/password handling. Passwords and sessions are exactly the kind of thing not to build from scratch on a personal project.
 
 #### 3.3.1 Eclipse specifically: Supabase, and the DM/player access model
+
+*Status (2026-09-20): built. The tables, policies and choices below are the original design; where they differ, the eclipse-site ADRs are current (invites replace a campaign code, sign-in is email and password or a magic link, a campaign creator allowlist, no client deletes, per-column grants).*
 
 Eclipse's actual requirements are more specific than "store some character data": players need live access to *their own* sheet, and a DM needs to be able to view *any* player's sheet under their campaign. That's a real authorization model (two roles, row-level ownership, a cross-user read grant), not just CRUD behind a login — and it's also live/collaborative in a way the apex site never is. **Supabase** (Postgres + Auth + Realtime) is the planned fit for exactly that shape of problem, and is the intended backend for this subdomain specifically — it does not replace D1 as the domain-wide default in §3.3, it's a deliberate exception for this one subdomain's requirements.
 
@@ -214,8 +235,8 @@ These are flagged rather than decided, because they're genuinely this project's 
 1. **Are these repos meant to be public/open-source?** Affects licensing, whether secrets-in-history matters retroactively, and whether contribution guidelines are worth writing.
 2. **Shared design system approach** (§3.4) — internal package vs. shared static asset vs. wait until a framework exists.
 3. **CI provider** — this document assumes GitHub Actions since the repos are on GitHub; confirm that's still the intent before wiring it up.
-4. **Eclipse's Supabase Auth method** — email/password, magic link, and/or OAuth — and how a DM's campaign/players actually get linked together (an invite code/link a DM shares, a player-requests-to-join flow, or the DM adding players by email) — this decides the shape of the `campaigns`/`campaign_players` tables in §3.3.1, so worth settling before writing that schema.
-5. **Whether a DM can ever edit a player's sheet** (adjustments, corrections) or is strictly view-only — changes whether §3.3.1's write policy is single-owner-only or needs a narrower DM-write exception.
+4. **Eclipse's Supabase Auth method** — email/password, magic link, and/or OAuth — and how a DM's campaign/players actually get linked together (an invite code/link a DM shares, a player-requests-to-join flow, or the DM adding players by email) — this decides the shape of the `campaigns`/`campaign_players` tables in §3.3.1, so worth settling before writing that schema. **Resolved:** email and password plus a magic link (Google later), and players join only through an expiring, hashed, revocable invite link the DM creates (eclipse-site ADR 0005 and 0007).
+5. **Whether a DM can ever edit a player's sheet** (adjustments, corrections) or is strictly view-only — changes whether §3.3.1's write policy is single-owner-only or needs a narrower DM-write exception. **Resolved:** strictly view-only, enforced by having no DM write policy at all (eclipse-site ADR 0001).
 
 ## 9. Companion file: CLAUDE.md
 
