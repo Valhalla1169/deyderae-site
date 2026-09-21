@@ -71,7 +71,10 @@ html { color-scheme: dark; scroll-behavior: smooth; }
   --gutter: clamp(1rem, 4vw, 2rem);
   --link: color-mix(in srgb, var(--blue) 75%, var(--text));
   --hover-title: color-mix(in srgb, var(--green) 55%, var(--text));
+  --icon: var(--green);
 }
+/* Raw Latte green is under 3:1 on the footer band. */
+[data-theme="latte"] { --icon: color-mix(in srgb, var(--green) 70%, var(--text)); }
 
 body {
   margin: 0;
@@ -116,7 +119,7 @@ main {
   padding: clamp(2.5rem, 8vw, 5rem) var(--gutter) clamp(3rem, 8vw, 5rem);
 }
 
-/* ---- Header (full-width bar) ---- */
+/* ---- Header (full-width bar: brand at the left edge, controls at the right edge) ---- */
 .site-header {
   position: sticky;
   top: 0;
@@ -127,8 +130,6 @@ main {
 }
 
 .bar {
-  max-width: var(--page-w);
-  margin: 0 auto;
   padding: 0.75rem var(--gutter);
   display: flex;
   align-items: center;
@@ -316,7 +317,7 @@ a.card:focus-visible h3 { color: var(--hover-title); }
   width: 2.75rem;
   height: 2.75rem;
   border-radius: 50%;
-  color: var(--text);
+  color: var(--icon);
   text-decoration: none;
   transition: color 0.2s ease, background-color 0.2s ease;
 }
