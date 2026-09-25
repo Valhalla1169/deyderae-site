@@ -61,11 +61,11 @@ A dated snapshot. The design decisions are in that repo's `docs/adr/` (0001 to 0
 | §4 SEO | Deliberately not indexed (`X-Robots-Tag: noindex`): it is a private app. No Open Graph, sitemap or canonical URL |
 | §5.1 Security headers | Pass. CSP (`self` and the project's Supabase origin only), HSTS, nosniff, frame-ancestors, `no-referrer`, Permissions-Policy |
 | §5.3 Secrets | The anon key is public by design. No service role key in the repo. The SMTP key is in `supabase/.env`, which is gitignored |
-| §5.4 Dependency hygiene | `npm audit` reports 0 vulnerabilities and every dev dependency is pinned exactly. Dependabot is not set up |
+| §5.4 Dependency hygiene | `npm audit` reports 0 vulnerabilities and every dev dependency is pinned exactly. Dependabot proposes weekly updates, and CI runs `npm audit` on every push and pull request |
 | §5.5 Application-layer security | RLS and per-column grants on every table, size and shape constraints, and 10 database test suites that test as several roles. Rate limits are Supabase Auth's own. CAPTCHA and two-factor are not built yet |
 | §6.1 PRs and protected `main` | Pull requests are in use. The `main` branch is not protected |
 | §6.2 README and LICENSE | Real README. No LICENSE: the repo is public, with no license granted (all rights reserved), decided 2026-09-25 (§8.1) |
-| §6.3 CI/CD | Being added this phase (no `.github/workflows` yet). Tests are still run by hand and deploys are still manual |
+| §6.3 CI/CD | GitHub Actions runs the unit, database, browser, dry-run, vendor and audit checks on every push and pull request. Deploys are still manual |
 | §6.4 Testing | Vitest unit tests, database suites (`npm run test:db`), Playwright browser tests with a fake Supabase, and an axe scan. Realtime needs a check on the live project |
 
 ## 3. Architecture
