@@ -65,7 +65,7 @@ A dated snapshot. The design decisions are in that repo's `docs/adr/` (0001 to 0
 | §5.5 Application-layer security | RLS and per-column grants on every table, size and shape constraints, and 10 database test suites that test as several roles. Rate limits are Supabase Auth's own. CAPTCHA and two-factor are not built yet |
 | §6.1 PRs and protected `main` | Pull requests are in use. The `main` branch is not protected |
 | §6.2 README and LICENSE | Real README. No LICENSE: the repo is public, with no license granted (all rights reserved), decided 2026-09-25 (§8.1) |
-| §6.3 CI/CD | GitHub Actions runs the unit, database, browser, dry-run, vendor and audit checks on every push and pull request. Deploys are still manual |
+| §6.3 CI/CD | GitHub Actions runs the unit, database, browser, dry-run, vendor and audit checks on every push and pull request. Cloudflare Workers Builds deploys every merge into `main`; a pull request branch is built but not deployed |
 | §6.4 Testing | Vitest unit tests, database suites (`npm run test:db`), Playwright browser tests with a fake Supabase, and an axe scan. Realtime needs a check on the live project |
 
 ## 3. Architecture
