@@ -49,23 +49,23 @@ Checked directly against the live site, the repo, and DNS. It is a dated snapsho
 | §6.2 README and LICENSE | README is a title only, and there is no LICENSE. `package.json` says `"license": "ISC"`, which is npm's default rather than a deliberate choice (§8.1) |
 | §6.3-§6.4 CI/CD, previews, link check, HTML validation, Lighthouse, axe | None yet. Deploys are manual |
 
-### 2.2 Standards check: Eclipse (2026-09-20)
+### 2.2 Standards check: Eclipse (2026-09-25)
 
-A dated snapshot. The design decisions are in that repo's `docs/adr/` (0001 to 0009) and its `CLAUDE.md`.
+A dated snapshot. The design decisions are in that repo's `docs/adr/` (0001 to 0014) and its `CLAUDE.md`.
 
 | Standard | Status |
 |---|---|
-| §3.5 Only `public/` is published | Pass. `wrangler deploy --dry-run` reads 54 files, and a browser test checks that private paths answer with the app shell |
+| §3.5 Only `public/` is published | Pass. `wrangler deploy --dry-run` reads 59 files, and a browser test checks that private paths answer with the app shell |
 | §4 Accessibility | An automated axe scan of every page in two themes passes (`tests/e2e/a11y.spec.js`), and a unit test checks colour contrast in all four palettes. A keyboard and screen-reader pass by hand has not been done |
 | §4 No inline scripts, styles or handlers | Pass. A unit test and the browser tests (which fail on any CSP violation) enforce it |
 | §4 SEO | Deliberately not indexed (`X-Robots-Tag: noindex`): it is a private app. No Open Graph, sitemap or canonical URL |
 | §5.1 Security headers | Pass. CSP (`self` and the project's Supabase origin only), HSTS, nosniff, frame-ancestors, `no-referrer`, Permissions-Policy |
 | §5.3 Secrets | The anon key is public by design. No service role key in the repo. The SMTP key is in `supabase/.env`, which is gitignored |
 | §5.4 Dependency hygiene | `npm audit` reports 0 vulnerabilities and every dev dependency is pinned exactly. Dependabot is not set up |
-| §5.5 Application-layer security | RLS and per-column grants on every table, size and shape constraints, and six SQL suites that test as several roles. Rate limits are Supabase Auth's own. CAPTCHA and two-factor are not built yet |
-| §6.1 PRs and protected `main` | Not in use |
-| §6.2 README and LICENSE | Real README. No LICENSE (`package.json` says UNLICENSED until a choice is made, §8.1) |
-| §6.3 CI/CD | None. Tests are run by hand and deploys are manual |
+| §5.5 Application-layer security | RLS and per-column grants on every table, size and shape constraints, and 10 database test suites that test as several roles. Rate limits are Supabase Auth's own. CAPTCHA and two-factor are not built yet |
+| §6.1 PRs and protected `main` | Pull requests are in use. The `main` branch is not protected |
+| §6.2 README and LICENSE | Real README. No LICENSE: the repo is public, with no license granted (all rights reserved), decided 2026-09-25 (§8.1) |
+| §6.3 CI/CD | Being added this phase (no `.github/workflows` yet). Tests are still run by hand and deploys are still manual |
 | §6.4 Testing | Vitest unit tests, database suites (`npm run test:db`), Playwright browser tests with a fake Supabase, and an axe scan. Realtime needs a check on the live project |
 
 ## 3. Architecture
@@ -232,7 +232,7 @@ Three tiers, once CI/CD is in place: **local** (`wrangler dev`), **preview** (au
 
 These are flagged rather than decided, because they're genuinely this project's calls to make, not something to default silently:
 
-1. **Are these repos meant to be public/open-source?** Affects licensing, whether secrets-in-history matters retroactively, and whether contribution guidelines are worth writing.
+1. **Are these repos meant to be public/open-source?** Affects licensing, whether secrets-in-history matters retroactively, and whether contribution guidelines are worth writing. **Resolved for eclipse-site:** the repo is public, with no license (all rights reserved), decided 2026-09-25 (see eclipse-site's README, "License").
 2. **Shared design system approach** (§3.4) — internal package vs. shared static asset vs. wait until a framework exists.
 3. **CI provider** — this document assumes GitHub Actions since the repos are on GitHub; confirm that's still the intent before wiring it up.
 4. **Eclipse's Supabase Auth method** — email/password, magic link, and/or OAuth — and how a DM's campaign/players actually get linked together (an invite code/link a DM shares, a player-requests-to-join flow, or the DM adding players by email) — this decides the shape of the `campaigns`/`campaign_players` tables in §3.3.1, so worth settling before writing that schema. **Resolved:** email and password plus a magic link (Google later), and players join only through an expiring, hashed, revocable invite link the DM creates (eclipse-site ADR 0005 and 0007).
